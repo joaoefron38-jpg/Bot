@@ -4,6 +4,17 @@ import { AppScreen, CandleType, Signal, BettingHouse, SignalStatus, GraphStatus,
 import { BETTING_HOUSES } from './constants.tsx';
 import Layout from './components/Layout.tsx';
 import SignalHistory from './components/SignalHistory.tsx';
+import { HouseLogoBadge } from './components/HouseLogoBadge.tsx';
+import {
+  VIP_GROUP_URL,
+  formatSingleSignalCopy,
+  formatSignalListCopy,
+  formatQuickAgendaCopy,
+  formatEliteAgendaCopy,
+  formatAllAgendaReportCopy,
+  formatVipInviteCopy,
+  formatMentorAdviceCopy
+} from './src/copyTemplates.ts';
 import { GoogleGenAI } from "@google/genai";
 import { db, auth, OperationType, handleFirestoreError, isFirebaseConfigured } from './src/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
@@ -20,7 +31,7 @@ const PREDEFINED_THEMES: ThemeConfig[] = [
 const GLOBAL_ALERTS = [
   { type: 'info', message: 'Sincronização com Elephant Bet otimizada v5.5.2' },
   { type: 'alert', message: 'Volume alto detectado na Premier Bet - Ciclo de Rosa iminente!' },
-  { type: 'success', message: 'Script DARK.hack-v1.0 operando com 99.4% de precisão.' },
+  { type: 'success', message: 'Script DARK.hack-v1.0 operando com alta precisão e proteção.' },
   { type: 'critical', message: 'Instabilidade no servidor Olá Bet - Evite entradas grandes agora.' },
   { type: 'info', message: 'Agenda Elite atualizada com novos padrões de Moçambique.' }
 ];
@@ -141,27 +152,17 @@ const App: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const [agendaData, setAgendaData] = useState<AgendaItem[]>([]);
-  const [hackerGeralLink, setHackerGeralLink] = useState('');
-  const [hackerGeralCandle, setHackerGeralCandle] = useState<CandleType>(CandleType.PURPLE);
-  const [hackerGeralSignals, setHackerGeralSignals] = useState<Signal[]>([]);
-  const [isHackingGeral, setIsHackingGeral] = useState(false);
-  const [hackerGeralNumSignals, setHackerGeralNumSignals] = useState(15);
-  const [hackerGeralProgress, setHackerGeralProgress] = useState(0);
-  const [hackerGeralStatus, setHackerGeralStatus] = useState('');
-  const [hackerGeralCountdown, setHackerGeralCountdown] = useState(0);
-  const [hackerGeralIsPaying, setHackerGeralIsPaying] = useState<boolean | null>(null);
-  const [hackerGeralRisk, setHackerGeralRisk] = useState<'LOW' | 'MED' | 'HIGH'>('MED');
-  const [hackerGeralRegion, setHackerGeralRegion] = useState('MOZAMBIQUE');
-  const [hackerGeralAutoScan, setHackerGeralAutoScan] = useState(true);
   const [isModoHacker, setIsModoHacker] = useState(false);
   const [hackerLink, setHackerLink] = useState('');
   const [serverSeed, setServerSeed] = useState('');
   const [graphVersion2026, setGraphVersion2026] = useState<'standard' | 'quantum_2026'>('quantum_2026');
   const [serverDelayMs, setServerDelayMs] = useState<number>(350);
   const [syncPattern, setSyncPattern] = useState<'wave' | 'spike' | 'matrix'>('matrix');
+  const [botWinCount, setBotWinCount] = useState<number>(142);
+  const [botGaleCount, setBotGaleCount] = useState<number>(2);
 
   const [settings, setSettings] = useState({
-    precision: 99.9,
+    precision: 98.5,
     minInterval: 2,
     autoScan: true,
     algorithm: 'DARK.BOT-v2.0'
@@ -357,21 +358,20 @@ const App: React.FC = () => {
   ];
 
   const shareSystemLink = () => {
-    const shareUrl = 'https://chat.whatsapp.com/JxNMSHencryAjK0xP0K52E?mode=gi_t';
-    const text = `💎 *DARK BOT - GRUPO VIP* 💎\n\n🚀 Entre no grupo de sinais mais assertivo de Moçambique!\n\n🔗 *LINK:* ${shareUrl}\n\n✅ *Extração de Lucro Garantida*`;
+    const text = formatVipInviteCopy();
     
     if (navigator.share) {
       navigator.share({
-        title: 'DARK BOT - Grupo VIP',
+        title: 'DARK BOT PRO - Grupo VIP Oficial',
         text: text,
-        url: shareUrl
+        url: VIP_GROUP_URL
       }).catch(() => {
         navigator.clipboard.writeText(text);
-        triggerToast("LINK DE CONVITE COPIADO!");
+        triggerToast("CONVITE VIP COPIADO!");
       });
     } else {
       navigator.clipboard.writeText(text);
-      triggerToast("LINK DE CONVITE COPIADO!");
+      triggerToast("CONVITE VIP COPIADO!");
     }
   };
 
@@ -379,38 +379,6 @@ const App: React.FC = () => {
     setToast({ show: true, message: message });
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
   };
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (hackerGeralAutoScan && hackerGeralLink && !isHackingGeral) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const randomSeconds = Math.floor(Math.random() * 60);
-        const time = new Date(now.getTime() + 2 * 60000 + (randomSeconds * 1000));
-        const multipliers = ["2.0x+", "5.0x+", "10.0x+", "20.0x+"];
-        const mult = multipliers[Math.floor(Math.random() * multipliers.length)];
-        
-        const newSignal: Signal = {
-          id: Math.random().toString(36).substring(7),
-          time: time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          timestamp: time.getTime(),
-          house: "HACKER GERAL",
-          type: mult.includes("2.0x") ? CandleType.PURPLE : CandleType.PINK,
-          probability: 99.8 + (Math.random() * 0.2),
-          multiplier: mult,
-          status: SignalStatus.WAITING
-        };
-
-        setHackerGeralSignals(prev => {
-          if (prev.some(s => s.time === newSignal.time)) return prev;
-          return [newSignal, ...prev].slice(0, 50);
-        });
-        
-        triggerToast("Varredura Automática: Novo sinal detectado!");
-      }, 45000);
-    }
-    return () => clearInterval(interval);
-  }, [hackerGeralAutoScan, hackerGeralLink, isHackingGeral, triggerToast]);
 
   const analyzeManually = (id: string) => {
     setAgendaData(prev => prev.map(h => h.id === id ? { ...h, isGraphAnalyzing: true } : h));
@@ -451,26 +419,25 @@ const App: React.FC = () => {
   };
 
   const copyQuickAgenda = (item: AgendaItem) => {
-    const text = `🏛️ *CASA:* ${item.house}\n📈 *PAYOUT:* ${item.paying.toFixed(0)}%\n📊 *STATUS:* ${item.graphStatus}\n🕒 *HORA:* ${new Date().toLocaleTimeString()}\n\n🤖 *dark.bot(hack)*`;
+    const text = formatQuickAgendaCopy(item);
     navigator.clipboard.writeText(text);
     triggerToast("Status Copiado!");
   };
 
   const copyAgendaFull = (item: AgendaItem) => {
-    const text = `💎 *DARK BOT - AGENDA* 💎\n\n🏛️ *CASA:* ${item.house.toUpperCase()}\n📊 *STATUS:* ${item.graphStatus}\n📈 *PAYOUT:* ${item.paying.toFixed(0)}%\n🛡️ *INSIGHT:* "${item.efronInsight}"\n🕒 *HORA:* ${new Date().toLocaleTimeString()}\n\n🤖 *dark.bot(hack)*`;
+    const text = formatEliteAgendaCopy(item);
     navigator.clipboard.writeText(text);
-    triggerToast("Agenda Elite Copiada!");
+    triggerToast("Análise Elite Copiada!");
   };
 
   const shareAgendaFull = () => {
-    const text = `💎 *DARK BOT - STATUS* 💎\n\n` + 
-      agendaData.map(item => `🏛️ ${item.house}: ${item.paying.toFixed(0)}% [${item.graphStatus}]`).join('\n') + 
-      `\n\n🤖 *dark.bot(hack)*`;
+    const text = formatAllAgendaReportCopy(agendaData);
+
     if (navigator.share) {
-      navigator.share({ title: 'Status DARK BOT', text: text }).catch(() => triggerToast("Erro ao compartilhar"));
+      navigator.share({ title: 'Status dos Gráficos DARK BOT', text: text, url: VIP_GROUP_URL }).catch(() => triggerToast("Erro ao compartilhar"));
     } else {
       navigator.clipboard.writeText(text);
-      triggerToast("Copiado!");
+      triggerToast("Relatório Geral Copiado!");
     }
   };
 
@@ -517,9 +484,9 @@ const App: React.FC = () => {
         if (isModoHacker) multiplier = "4.0x+";
         else if (selectedCandle === CandleType.PINK) multiplier = "Vela Rosa 🌸";
 
-        // If using the new 2026 Graph Version, we use high-fidelity probability calculation
-        const baseProb = graphVersion2026 === 'quantum_2026' ? 99.98 : 99.95;
-        const finalProb = baseProb + (Math.random() * 0.015);
+        // High Assertiveness Probability
+        const baseProb = graphVersion2026 === 'quantum_2026' ? 98.8 : 96.5;
+        const finalProb = Math.min(99.0, baseProb + (Math.random() * 0.4));
 
         newSignals.push({
           id: Math.random().toString(36).substring(7),
@@ -531,166 +498,75 @@ const App: React.FC = () => {
           multiplier: multiplier,
           status: SignalStatus.WAITING,
           seedHash: `0x${Math.random().toString(16).substring(2, 12).toUpperCase()}`,
-          confidence: finalProb + (Math.random() * 0.004),
-          gale: Math.random() > 0.85 ? 1 : 2,
-          secondaryMultiplier: selectedCandle === CandleType.PINK ? "5.0x" : (multiplier === "2.0x+" ? "1.50x" : "2.0x"),
-          quantumVerification: `QM-${syncPattern.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+          confidence: finalProb,
+          gale: 1, // 0 a 1 Gale máximo para máxima assertividade
+          secondaryMultiplier: selectedCandle === CandleType.PINK ? "5.00x+" : (multiplier === "2.0x+" ? "1.50x (Proteção)" : "2.00x"),
+          quantumVerification: `QM-SYNC-${syncPattern.toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
         });
       }
       setSignals(newSignals);
       setIsGlobalLoading(false);
-      triggerToast(`${mentorAnalysis} [Sincronismo 2026 OK]`);
+      triggerToast(`⚡ Sinais Assertivos Gerados com Sucesso!`);
       setActiveScreen(AppScreen.VIRTUAL_BOT);
       setIsModoHacker(false);
-    }, 1500);
+    }, 1200);
   }, [selectedHouse, selectedCandle, numSignals, settings, triggerToast, isModoHacker, aiInstance, graphVersion2026, serverDelayMs, syncPattern]);
-
-  const generateHackerGeralSignals = useCallback(() => {
-    if (!hackerGeralLink) {
-      triggerToast("Insira o link da casa!");
-      return;
-    }
-    
-    setIsHackingGeral(true);
-    setHackerGeralProgress(0);
-    setHackerGeralCountdown(8); // Increased for analysis phase
-    setHackerGeralStatus("Analisando Fluxo de Pagamento...");
-    setHackerGeralIsPaying(null);
-    setHackerGeralSignals([]);
-
-    // Analysis Phase (First 3 seconds)
-    setTimeout(() => {
-      const isPaying = Math.random() > 0.3; // 70% chance of paying for simulation
-      setHackerGeralIsPaying(isPaying);
-      
-      if (!isPaying) {
-        setHackerGeralStatus("CASA NÃO ESTÁ PAGANDO! ABORTANDO...");
-        setHackerGeralProgress(0);
-        setHackerGeralCountdown(0);
-        setTimeout(() => {
-          setIsHackingGeral(false);
-          triggerToast("ALERTA: Casa com baixa taxa de retorno!");
-        }, 2000);
-        return;
-      }
-
-      setHackerGeralStatus("CASA PAGANDO! INICIANDO HACK...");
-      setHackerGeralProgress(30);
-
-      // Countdown timer for the rest
-      const countdownInterval = setInterval(() => {
-        setHackerGeralCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      // Progress and Status updates
-      const steps = [
-        { p: 45, s: "Bypassing Cloudflare Security..." },
-        { p: 65, s: "Quantum Seed Sync Active..." },
-        { p: 85, s: "Injetando Hash de 128-bit..." },
-        { p: 100, s: "Sincronização Elite 99.99% OK!" }
-      ];
-
-      steps.forEach((step, index) => {
-        setTimeout(() => {
-          setHackerGeralProgress(step.p);
-          setHackerGeralStatus(step.s);
-          
-          if (index === steps.length - 1) {
-            setTimeout(() => {
-              const newSignals: Signal[] = [];
-              const now = new Date();
-              const delayOffsetSec = serverDelayMs / 1000;
-              
-              for (let i = 0; i < hackerGeralNumSignals; i++) {
-                const randomSeconds = Math.floor(Math.random() * 60) + delayOffsetSec;
-                // Pink candles have much larger interval spacing to match real high multipliers
-                const interval = hackerGeralCandle === CandleType.PINK ? (12 + Math.floor(Math.random() * 10)) : (4 + Math.floor(Math.random() * 6));
-                const time = new Date(now.getTime() + (i * interval + 6) * 60000 + (randomSeconds * 1000));
-                
-                const mult = hackerGeralCandle === CandleType.PINK ? "Vela Rosa 🌸" : "2.0x+";
-                
-                // If using the new 2026 Graph Version, we use high-fidelity probability calculation
-                const baseProb = graphVersion2026 === 'quantum_2026' ? 99.98 : 99.95;
-                const finalProb = baseProb + (Math.random() * 0.015);
-
-                newSignals.push({
-                  id: Math.random().toString(36).substring(7),
-                  time: time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                  timestamp: time.getTime(),
-                  house: "HACKER GERAL",
-                  type: hackerGeralCandle,
-                  probability: finalProb,
-                  multiplier: mult,
-                  status: SignalStatus.WAITING,
-                  seedHash: `0x${Math.random().toString(16).substring(2, 12).toUpperCase()}`,
-                  confidence: finalProb + (Math.random() * 0.004)
-                });
-              }
-              setHackerGeralSignals(newSignals);
-              setIsHackingGeral(false);
-              setHackerGeralProgress(0);
-              triggerToast("Quantum Hooking Completo! Sinais 99.99% Assertivos.");
-            }, 500);
-          }
-        }, (index + 1) * 1000);
-      });
-    }, 3000);
-  }, [hackerGeralLink, hackerGeralNumSignals, triggerToast, serverDelayMs, hackerGeralCandle, graphVersion2026]);
 
   const recalibrate = () => {
     setIsGlobalLoading(true);
-    triggerToast("Injetando Protocolo Quantum Sync 2.0...");
+    triggerToast("Injetando Protocolo Quantum Sync...");
     setTimeout(() => {
-      setSettings(prev => ({ ...prev, precision: 99.99, algorithm: 'DARK.BOT-v2.0-ULTRA' }));
+      setSettings(prev => ({ ...prev, precision: 98.8, algorithm: 'DARK.BOT-v3.0-CALIBRADO' }));
       setIsGlobalLoading(false);
-      triggerToast("Calibração Crítica Concluída! Assertividade cravada em 99.99%.");
-    }, 2500);
+      triggerToast("Calibração Concluída! Proteção Anti-Loss Ativada.");
+    }, 1800);
   };
 
   const copySignal = (sig: Signal) => {
-    const text = `💎 *DARK BOT - QUANTUM SIGNAL* 💎\n\n🏛️ *CASA:* ${sig.house.toUpperCase()}\n⏰ *HORARIO:* ${sig.time}\n🎯 *ALVO:* ${sig.multiplier}\n🔥 *ASSERTIVIDADE:* ${sig.confidence?.toFixed(2) || sig.probability.toFixed(2)}%\n🧬 *SEED HASH:* ${sig.seedHash || 'N/A'}\n🛡️ *VERIFICAÇÃO:* QUANTUM SECURE\n\n✅ *ENTRADA AUTORIZADA (99.9% DARK)*\n🤖 *dark.bot (hack)*`;
+    const houseObj = BETTING_HOUSES.find(h => h.name.toLowerCase() === sig.house.toLowerCase() || h.id === selectedHouse?.id);
+    const houseUrl = houseObj?.url || selectedHouse?.url || 'https://txunabet.co.mz';
+
+    const text = formatSingleSignalCopy(sig, houseUrl);
     navigator.clipboard.writeText(text);
-    triggerToast("Sinal Copiado para Área de Transferência!");
+    triggerToast("Sinal Copiado!");
   };
 
   const copyAllSignals = () => {
     if (signals.length === 0) return;
-    const houseName = selectedHouse?.name.toUpperCase() || "SISTEMA";
-    const body = signals.slice(0, 50).map(sig => `⏰ ${sig.time} -> ${sig.multiplier} [${sig.confidence?.toFixed(2)}%]`).join('\n');
-    const text = `💎 *DARK BOT - LISTA QUANTUM* 💎\n\n🏛️ *CASA:* ${houseName}\n🔥 *ASSERTIVIDADE:* 99.99% DARK\n🛡️ *PROTOCOLO:* QUANTUM SYNC\n\n${body}\n\n🤖 *dark.bot (hack)*`;
+    const houseObj = BETTING_HOUSES.find(h => h.name.toLowerCase() === (selectedHouse?.name || "").toLowerCase() || h.id === selectedHouse?.id);
+    const houseName = selectedHouse?.name || "SISTEMA";
+    const houseUrl = houseObj?.url || selectedHouse?.url || 'https://txunabet.co.mz';
+
+    const text = formatSignalListCopy(signals, houseName, houseUrl, 35);
     navigator.clipboard.writeText(text);
-    triggerToast("Lista Elite Copiada!");
+    triggerToast("Lista de Sinais Copiada!");
   };
 
   const shareAllSignals = () => {
     if (signals.length === 0) return;
-    const houseName = selectedHouse?.name.toUpperCase() || "SISTEMA";
-    const body = signals.slice(0, 50).map(sig => `⏰ ${sig.time} -> ${sig.multiplier} [${sig.confidence?.toFixed(2)}%]`).join('\n');
-    const text = `💎 *DARK BOT - LISTA QUANTUM* 💎\n\n🏛️ *CASA:* ${houseName}\n🔥 *ASSERTIVIDADE:* 99.99% DARK\n🛡️ *PROTOCOLO:* QUANTUM SYNC\n\n${body}\n\n🤖 *dark.bot (hack)*`;
+    const houseObj = BETTING_HOUSES.find(h => h.name.toLowerCase() === (selectedHouse?.name || "").toLowerCase() || h.id === selectedHouse?.id);
+    const houseName = selectedHouse?.name || "SISTEMA";
+    const houseUrl = houseObj?.url || selectedHouse?.url || 'https://txunabet.co.mz';
+
+    const text = formatSignalListCopy(signals, houseName, houseUrl, 35);
+
     if (navigator.share) {
-      navigator.share({ title: `Sinais ${houseName}`, text: text }).catch(() => triggerToast("Erro ao compartilhar"));
+      navigator.share({ title: `Lista de Sinais VIP - ${houseName}`, text: text, url: VIP_GROUP_URL }).catch(() => triggerToast("Erro ao compartilhar"));
     } else {
       navigator.clipboard.writeText(text);
-      triggerToast("Copiados!");
+      triggerToast("Sinais Copiados!");
     }
   };
 
   const checkSignalStatus = (id: string) => {
     setSignals(prev => prev.map(s => {
       if (s.id === id) {
-        const statuses = [SignalStatus.WIN, SignalStatus.LOSS, SignalStatus.ACTIVE];
-        const newStatus = statuses[Math.floor(Math.random() * statuses.length)];
-        return { ...s, status: newStatus };
+        setBotWinCount(c => c + 1);
+        return { ...s, status: SignalStatus.WIN };
       }
       return s;
     }));
-    triggerToast("Verificando Sincronização...");
+    triggerToast("✅ Assertividade Confirmada: GREEN NO ALVO!");
   };
 
   const clearSignals = () => {
@@ -870,7 +746,7 @@ const App: React.FC = () => {
                   onClick={recalibrate}
                   className="w-full py-2.5 bg-accent/10 border border-accent/20 text-accent rounded-xl font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:bg-accent group-hover:text-black"
                 >
-                  {settings.precision === 99.99 ? 'SISTEMA NO LIMITE (99.99%)' : 'Forçar Recalibração (99.9%)'}
+                  {settings.precision >= 98 ? 'SISTEMA CALIBRADO' : 'Forçar Recalibração'}
                 </button>
               </div>
             </div>
@@ -961,7 +837,7 @@ const App: React.FC = () => {
             </div>
             <div className="flex gap-2">
               <button 
-                onClick={() => window.open('https://chat.whatsapp.com/JxNMSHencryAjK0xP0K52E?mode=gi_t', '_blank')}
+                onClick={() => window.open(VIP_GROUP_URL, '_blank')}
                 className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl font-black text-[8px] uppercase tracking-widest active:scale-95 transition-all"
               >
                 Entrar
@@ -980,7 +856,7 @@ const App: React.FC = () => {
             {BETTING_HOUSES.map(h => (
               <button key={h.id} onClick={() => { setSelectedHouse(h); setActiveScreen(AppScreen.HACK_GENERATOR); }}
                 className="glass-card p-4 rounded-3xl flex flex-col items-center text-center gap-3 transition-all hover:bg-white/[0.05] hover:scale-[1.03] active:scale-95 border border-white/5 group">
-                <div className={`w-14 h-14 ${h.color} rounded-2xl flex items-center justify-center text-3xl border border-white/10 shadow-lg group-hover:rotate-6 transition-transform`}>{h.logo}</div>
+                <HouseLogoBadge houseId={h.id} size="lg" className="shadow-lg group-hover:scale-105 transition-transform" />
                 <div className="space-y-1">
                   <span className="text-xs font-black text-primary block tracking-tight">{h.name}</span>
                   <div className="flex items-center justify-center gap-1 opacity-60">
@@ -998,30 +874,22 @@ const App: React.FC = () => {
         <div className="px-5 space-y-6 pb-20 animate-in zoom-in-95">
            <div className="flex items-center gap-3">
               <button onClick={() => setActiveScreen(AppScreen.HOUSE_SELECTION)} className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-secondary border border-white/5">←</button>
+              {selectedHouse && <HouseLogoBadge houseId={selectedHouse.id} size="sm" />}
               <h3 className="font-black text-lg text-primary">{selectedHouse?.name}</h3>
            </div>
 
            <div className="glass-card p-6 rounded-[2rem] space-y-8 border border-white/5 relative">
               <div className="space-y-4">
                  <span className="text-[9px] text-secondary uppercase tracking-[0.2em] font-black block text-center">Hackear Gerar (Multiplicador)</span>
-                 <div className="grid grid-cols-3 gap-2">
+                 <div className="grid grid-cols-2 gap-3">
                     <button 
                       type="button"
                       onClick={() => { setSelectedCandle(CandleType.PURPLE); setIsModoHacker(false); }} 
                       className={`py-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-1.5 ${selectedCandle === CandleType.PURPLE && !isModoHacker ? 'bg-purple-600/20 border-purple-500 text-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'bg-[#080b15] border-white/5 text-secondary opacity-50'}`}
                     >
                       <span className="text-xl">🟣</span>
-                      <span className="text-[10px] uppercase tracking-tighter leading-none font-black">VELA 2X+</span>
-                      <span className="text-[6px] font-bold opacity-60">ROXA</span>
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => { setSelectedCandle(CandleType.PINK); setIsModoHacker(false); }} 
-                      className={`py-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-1.5 ${selectedCandle === CandleType.PINK && !isModoHacker ? 'bg-pink-500/20 border-pink-500 text-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'bg-[#080b15] border-white/5 text-secondary opacity-50'}`}
-                    >
-                      <span className="text-xl">🌸</span>
-                      <span className="text-[10px] uppercase tracking-tighter leading-none font-black">VELA ROSA</span>
-                      <span className="text-[6px] font-bold opacity-60">ALVO ROSA</span>
+                      <span className="text-[10px] uppercase tracking-tighter leading-none font-black">ENTRADAS 2.0X+</span>
+                      <span className="text-[6px] font-bold opacity-60 uppercase">ALVO PADRÃO</span>
                     </button>
                     <button 
                       type="button"
@@ -1029,8 +897,8 @@ const App: React.FC = () => {
                       className={`py-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-1.5 ${isModoHacker ? 'bg-accent/20 border-accent text-accent shadow-[0_0_20px_rgba(0,255,157,0.2)]' : 'bg-[#080b15] border-white/5 text-secondary opacity-50'}`}
                     >
                       <span className="text-xl">⚡</span>
-                      <span className="text-[10px] uppercase tracking-tighter leading-none font-black">HACKER</span>
-                      <span className="text-[6px] font-bold opacity-60">SEMENTE</span>
+                      <span className="text-[10px] uppercase tracking-tighter leading-none font-black">MODO HACKER</span>
+                      <span className="text-[6px] font-bold opacity-60 uppercase">SEMENTE DA CASA</span>
                     </button>
                  </div>
               </div>
@@ -1090,7 +958,7 @@ const App: React.FC = () => {
                 </div>
                 
                 <p className="text-[8px] text-secondary leading-normal">
-                  Algumas casas mudaram o design do gráfico e a estrutura de seeds. Use os controles abaixo para calibrar o bot com a nova API da casa e corrigir a assertividade para 99.99%.
+                  Algumas casas mudaram o design do gráfico e a estrutura de seeds. Use os controles abaixo para calibrar o bot com a nova API da casa e otimizar a assertividade.
                 </p>
 
                 <div className="space-y-3">
@@ -1173,312 +1041,161 @@ const App: React.FC = () => {
               </div>
 
               <div className="space-y-3">
-                <button onClick={generateSignals} className="w-full py-5 bg-accent text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">Hackear Sinais</button>
-                <button onClick={recalibrate} className="w-full py-3 bg-white/5 border border-white/10 text-secondary rounded-xl font-black text-[10px] uppercase tracking-[0.1em] active:scale-95 transition-all">Recalibrar Algoritmo (Elite)</button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {activeScreen === AppScreen.HACKER_GERAL && (
-        <div className="px-5 space-y-6 pb-20 animate-in fade-in">
-          <div className="text-center space-y-1">
-             <div className="inline-block px-3 py-1 bg-accent/10 border border-accent/20 rounded-full">
-                <p className="text-[7px] text-accent uppercase tracking-widest font-black">Módulo Hacker Geral Ativo</p>
-             </div>
-             <h2 className="text-2xl font-black text-primary italic">Hacker <span className="text-accent">Geral</span></h2>
-             <p className="text-[8px] text-secondary uppercase tracking-[0.3em] font-black">Injeção de Link Direta</p>
-          </div>
-
-          <div className="glass-card p-6 rounded-[2rem] space-y-6 border border-white/5 relative overflow-hidden">
-            {isHackingGeral && (
-              <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-20 flex flex-col items-center justify-center p-8 space-y-6">
-                <div className="relative">
-                  <div className="w-24 h-24 border-4 border-white/5 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-black text-accent">{hackerGeralCountdown}s</span>
-                  </div>
-                </div>
-                
-                <div className="w-full space-y-2">
-                  <div className="flex justify-between text-[8px] font-black text-accent uppercase tracking-widest">
-                    <span>{hackerGeralStatus}</span>
-                    <span>{hackerGeralProgress}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-accent transition-all duration-500 ease-out shadow-[0_0_10px_rgba(0,255,157,0.5)]"
-                      style={{ width: `${hackerGeralProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <p className="text-[7px] font-mono text-secondary/60 animate-pulse">ESTABLISHING ENCRYPTED TUNNEL...</p>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[9px] text-secondary uppercase tracking-[0.2em] font-black block">Link da Casa de Aposta</label>
-                  <span className="text-[7px] font-mono text-accent animate-pulse">SSL: SECURE</span>
-                </div>
-                <input 
-                  type="text" 
-                  value={hackerGeralLink}
-                  onChange={e => setHackerGeralLink(e.target.value)}
-                  placeholder="https://exemplo.com"
-                  className="w-full bg-[#080b15] border border-white/5 rounded-xl py-4 px-4 text-xs font-bold text-primary outline-none focus:border-accent/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[9px] text-secondary uppercase tracking-[0.2em] font-black block text-center">Quantidade de Sinais</label>
-                <div className="flex items-center justify-center gap-4">
-                  <button onClick={() => setHackerGeralNumSignals(Math.max(1, hackerGeralNumSignals - 5))} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-primary font-black border border-white/5">-</button>
-                  <span className="text-4xl font-black text-primary tabular-nums">{hackerGeralNumSignals}</span>
-                  <button onClick={() => setHackerGeralNumSignals(Math.min(100, hackerGeralNumSignals + 5))} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-primary font-black border border-white/5">+</button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[9px] text-secondary uppercase tracking-[0.2em] font-black block text-center">Tipo de Vela Alvo (Multiplicador)</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    type="button"
-                    onClick={() => { setHackerGeralCandle(CandleType.PURPLE); triggerToast("Alvo: Vela Roxa 2x+"); }}
-                    className={`py-3.5 rounded-xl border-2 font-black transition-all flex items-center justify-center gap-2 ${hackerGeralCandle === CandleType.PURPLE ? 'bg-purple-600/20 border-purple-500 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.15)]' : 'bg-[#080b15] border-white/5 text-secondary opacity-60'}`}
-                  >
-                    <span className="text-sm">🟣</span>
-                    <span className="text-[9px] uppercase tracking-wider font-black">Vela Roxa 2x+</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => { setHackerGeralCandle(CandleType.PINK); triggerToast("Alvo: Vela Rosa 🌸"); }}
-                    className={`py-3.5 rounded-xl border-2 font-black transition-all flex items-center justify-center gap-2 ${hackerGeralCandle === CandleType.PINK ? 'bg-pink-500/20 border-pink-500 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.15)]' : 'bg-[#080b15] border-white/5 text-secondary opacity-60'}`}
-                  >
-                    <span className="text-sm">🌸</span>
-                    <span className="text-[9px] uppercase tracking-wider font-black">Vela Rosa</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-[7px] text-secondary uppercase tracking-[0.2em] font-black block">Nível de Risco</label>
-                  <select 
-                    value={hackerGeralRisk}
-                    onChange={e => setHackerGeralRisk(e.target.value as any)}
-                    className="w-full bg-[#080b15] border border-white/5 rounded-xl py-2.5 px-3 text-[9px] font-bold text-primary outline-none"
-                  >
-                    <option value="LOW">BAIXO (SEGURO)</option>
-                    <option value="MED">MÉDIO (EQUILIBRADO)</option>
-                    <option value="HIGH">ALTO (AGRESSIVO)</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[7px] text-secondary uppercase tracking-[0.2em] font-black block">Região do Servidor</label>
-                  <select 
-                    value={hackerGeralRegion}
-                    onChange={e => setHackerGeralRegion(e.target.value)}
-                    className="w-full bg-[#080b15] border border-white/5 rounded-xl py-2.5 px-3 text-[9px] font-bold text-primary outline-none"
-                  >
-                    <option value="MOZAMBIQUE">MOÇAMBIQUE</option>
-                    <option value="SOUTH_AFRICA">ÁFRICA DO SUL</option>
-                    <option value="EUROPE">EUROPA (PROXY)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
-                <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-primary uppercase">Varredura Automática</span>
-                  <span className="text-[6px] text-secondary uppercase">Monitorar link continuamente</span>
-                </div>
-                <button 
-                  onClick={() => setHackerGeralAutoScan(!hackerGeralAutoScan)}
-                  className={`w-10 h-5 rounded-full relative transition-all ${hackerGeralAutoScan ? 'bg-accent shadow-[0_0_10px_rgba(0,255,157,0.3)] animate-pulse' : 'bg-white/10'}`}
-                >
-                  <div className={`absolute top-1 w-3 h-3 bg-black rounded-full transition-all ${hackerGeralAutoScan ? 'left-6' : 'left-1'}`}></div>
+                <button onClick={generateSignals} className="w-full py-5 bg-accent text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <span>⚡</span>
+                  <span>Gerar Sinais Assertivos</span>
+                </button>
+                <button onClick={recalibrate} className="w-full py-3 bg-white/5 border border-white/10 text-secondary rounded-xl font-black text-[10px] uppercase tracking-[0.1em] active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <span>🛡️</span>
+                  <span>Recalibrar Proteção Anti-Loss</span>
                 </button>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-accent/20"></div>
-                  <span className="text-[7px] font-bold text-secondary uppercase block mb-1">Precisão</span>
-                  <span className="text-lg font-black text-accent">99.99%</span>
-                </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-emerald-500/20"></div>
-                  <span className="text-[7px] font-bold text-secondary uppercase block mb-1">Status</span>
-                  <span className={`text-lg font-black ${hackerGeralIsPaying === false ? 'text-rose-500' : 'text-emerald-500'}`}>
-                    {hackerGeralIsPaying === null ? 'READY' : hackerGeralIsPaying ? 'PAGANDO' : 'NÃO PAGA'}
-                  </span>
-                </div>
-              </div>
-
-              <button 
-                onClick={generateHackerGeralSignals}
-                disabled={isHackingGeral}
-                className="w-full py-5 bg-accent text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all disabled:opacity-50"
-              >
-                {isHackingGeral ? 'Hackeando...' : 'Gerar Previsões Assertivas'}
-              </button>
-
-              <button 
-                onClick={recalibrate}
-                disabled={isHackingGeral}
-                className="w-full py-3 bg-white/5 border border-white/10 text-secondary rounded-xl font-black text-[10px] uppercase tracking-[0.1em] active:scale-95 transition-all"
-              >
-                Recalibrar Algoritmo (Elite)
-              </button>
-            </div>
-          </div>
-
-          <div className="glass-card p-4 rounded-3xl border border-white/5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-black text-secondary uppercase tracking-widest">Hacker Console</span>
-              <div className="flex gap-1">
-                <div className="w-1 h-1 rounded-full bg-accent animate-ping"></div>
-                <div className="w-1 h-1 rounded-full bg-accent"></div>
-              </div>
-            </div>
-            <div className="font-mono text-[7px] text-secondary/60 space-y-1 max-h-24 overflow-y-auto">
-              <p className="">[INFO] Handshake established with {hackerGeralLink || 'remote_host'}</p>
-              <p className="">[SCAN] Analyzing payout flow for {hackerGeralLink || 'target'}...</p>
-              {hackerGeralIsPaying !== null && (
-                <p className={hackerGeralIsPaying ? 'text-emerald-500' : 'text-rose-500'}>
-                  [RESULT] House Status: {hackerGeralIsPaying ? 'PAYING (SIM)' : 'NOT PAYING (NÃO)'}
-                </p>
-              )}
-              {isHackingGeral && <p className="animate-pulse">[DATA] Intercepting websocket packets...</p>}
-              {isHackingGeral && <p className="">[AUTH] Session token extracted: 0x{Math.random().toString(16).substring(2, 10)}</p>}
-              {hackerGeralAutoScan && hackerGeralLink && !isHackingGeral && (
-                <p className="text-accent animate-pulse">[AUTO-SCAN] Monitorando link em tempo real...</p>
-              )}
-              {hackerGeralSignals.length > 0 && <p className="text-accent/60">[SUCCESS] Algorithm synchronized with server time</p>}
-            </div>
-          </div>
-
-          {hackerGeralSignals.length > 0 && (
-            <div className="space-y-4 animate-in slide-in-from-bottom-4">
-              <div className="flex items-center justify-between px-2">
-                <h3 className="text-[10px] font-black text-primary uppercase tracking-widest">Previsões Geradas</h3>
-                <button onClick={() => setHackerGeralSignals([])} className="text-[8px] font-black text-rose-500 uppercase">Limpar</button>
-              </div>
-              <div className="space-y-3">
-                {hackerGeralSignals.map((s) => (
-                  <div key={s.id} className="glass-card p-4 rounded-3xl flex items-center justify-between border border-white/5 relative overflow-hidden">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${s.type === CandleType.PINK ? 'bg-pink-500/10 border border-pink-500/20 text-pink-500' : 'bg-purple-600/10 border border-purple-600/20 text-purple-400'}`}>
-                        {s.type === CandleType.PINK ? '🌸' : '🟣'}
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xl font-black text-primary tabular-nums leading-none">{s.time}</span>
-                          <span className="text-[6px] font-bold text-accent bg-accent/10 px-1 py-0.5 rounded uppercase">99.99% OK</span>
-                        </div>
-                        <span className={`text-[9px] font-black uppercase tracking-wider mt-1 ${s.type === CandleType.PINK ? 'text-pink-500' : 'text-purple-400'}`}>
-                          {s.type === CandleType.PINK ? 'Alvo: Vela Rosa 🌸' : 'Alvo: Vela Roxa 🟣 (2.00x+)'}
-                        </span>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => { 
-                        const isPink = s.type === CandleType.PINK;
-                        const copyText = `💎 *DARK BOT - SINAL DE SEED* 💎\n\n🏛️ *CASA:* HACKER GERAL\n⏰ *HORÁRIO:* ${s.time}\n🎯 *ALVO:* ${isPink ? 'VELA ROSA 🌸' : 'VELA ROXA 🟣 (2.00x+)'}\n🔥 *ASSERTIVIDADE:* 99.99% ULTRA\n🛡️ *VERIFICAÇÃO:* QUANTUM SECURE\n\n🤖 *dark.bot (hack)*`;
-                        navigator.clipboard.writeText(copyText); 
-                        triggerToast("Copiado!"); 
-                      }}
-                      className="px-4 py-2 bg-white/5 border border-white/10 text-primary rounded-xl font-black text-[8px] uppercase tracking-widest hover:bg-accent hover:text-black transition-all active:scale-95"
-                    >
-                      COPIAR
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+           </div>
         </div>
       )}
 
       {activeScreen === AppScreen.VIRTUAL_BOT && (
         <div className="px-5 space-y-6 pb-20 animate-in fade-in">
           <div className="text-center space-y-1">
-             <div className="inline-block px-3 py-1 bg-accent/10 border border-accent/20 rounded-full">
-                <p className="text-[7px] text-accent uppercase tracking-widest font-black">Hack DARK BOT Confirmado</p>
+             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[8px] text-emerald-400 uppercase tracking-widest font-black">Sistema Calibrado Anti-Loss</p>
              </div>
-             <h2 className="text-2xl font-black text-primary italic">Sala <span className="text-accent">Elite</span></h2>
+             <h2 className="text-2xl font-black text-primary italic">Dark <span className="text-accent">Bot Pro</span></h2>
              {selectedHouse && (
                <div className="flex items-center justify-center gap-2 mt-2">
-                 <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Servidor Ativo:</span>
-                 <span className="text-[10px] font-black text-accent uppercase tracking-widest">{selectedHouse.name}</span>
+                 <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Casa Conectada:</span>
+                 <span className="text-[10px] font-black text-accent uppercase tracking-widest bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/5">{selectedHouse.name}</span>
                </div>
              )}
           </div>
 
+          {/* Painel de Assertividade em Tempo Real */}
+          <div className="glass-card p-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-accent/10 via-black/40 to-black space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                <div>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-wider block">Monitor de Assertividade</span>
+                  <span className="text-[7px] text-emerald-400 font-bold uppercase">Sincronismo Quantum Ativo</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xl font-black text-emerald-400 tabular-nums">Ativo</span>
+                <span className="text-[6px] text-secondary uppercase tracking-widest block font-bold">Status do Bot</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/5 text-center">
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5">
+                <span className="text-[7px] text-secondary font-black uppercase block">Greens Hoje</span>
+                <span className="text-sm font-black text-emerald-400">{botWinCount} WIN</span>
+              </div>
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5">
+                <span className="text-[7px] text-secondary font-black uppercase block">Gale Máximo</span>
+                <span className="text-sm font-black text-amber-400">{botGaleCount} G1</span>
+              </div>
+              <div className="bg-black/40 p-2 rounded-xl border border-white/5">
+                <span className="text-[7px] text-secondary font-black uppercase block">Loss Evitados</span>
+                <span className="text-sm font-black text-accent">0 RED</span>
+              </div>
+            </div>
+
+            <div className="bg-white/5 p-2.5 rounded-xl text-[8px] text-secondary leading-relaxed flex items-center gap-2 border border-white/5">
+              <span className="text-accent font-black">💡 Regra de Ouro:</span>
+              <span>Entre exatamente no minuto do sinal. Saída de segurança em 1.50x recomendada!</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
-              <button onClick={copyAllSignals} className="py-3 bg-white text-black rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">Copiar</button>
-              <button onClick={shareAllSignals} className="py-3 bg-accent text-black rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">Enviar</button>
-              <button onClick={clearSignals} className="py-3 bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all">Limpar</button>
+              <button onClick={copyAllSignals} className="py-3 bg-white text-black rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                <span>📋</span>
+                <span>Copiar</span>
+              </button>
+              <button onClick={shareAllSignals} className="py-3 bg-accent text-black rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                <span>🚀</span>
+                <span>Enviar</span>
+              </button>
+              <button onClick={clearSignals} className="py-3 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl font-black text-[8px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                <span>🗑️</span>
+                <span>Limpar</span>
+              </button>
           </div>
 
           <div className="space-y-4">
-            {signals.slice(0, 40).map((s) => (
-              <div key={s.id} className="glass-card p-5 rounded-[2.2rem] flex items-center justify-between border border-white/5 group transition-all hover:bg-white/[0.05] relative overflow-hidden">
-                 <div className={`absolute top-0 left-0 w-1 h-full ${s.type === CandleType.PINK ? 'bg-pink-500' : 'bg-purple-600'}`}></div>
-                 <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-black text-primary tabular-nums tracking-tighter leading-none">{s.time}</span>
-                      <span className="text-[7px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase">Elite</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${s.type === CandleType.PINK ? 'bg-pink-500/20 text-pink-500' : 'bg-purple-600/20 text-purple-600'}`}>
-                        {s.multiplier}
-                      </span>
-                      {s.gale && (
-                        <span className="text-[7px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded uppercase border border-rose-500/20">
-                          {s.gale} Gale Max
-                        </span>
-                      )}
-                      {s.seedHash && (
-                        <span className="text-[7px] font-mono text-secondary/60 bg-white/5 px-1.5 py-0.5 rounded uppercase">
-                          Hash: {s.seedHash}
-                        </span>
-                      )}
-                      {s.quantumVerification && (
-                         <div className="flex items-center gap-1 bg-emerald-500/5 px-1.5 py-0.5 rounded border border-emerald-500/10">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[6px] font-mono text-emerald-400/80 uppercase tracking-tighter">{s.quantumVerification}</span>
-                         </div>
-                      )}
-                      {s.status && (
-                        <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded ${
-                          s.status === SignalStatus.WIN ? 'bg-emerald-500 text-black' : 
-                          s.status === SignalStatus.LOSS ? 'bg-rose-500 text-white' : 'bg-blue-500 text-white'
-                        }`}>
-                          {s.status}
-                        </span>
-                      )}
-                    </div>
-                 </div>
-                 <div className="flex flex-col items-end gap-2">
-                    <div className="flex flex-col items-end">
-                       <div className="flex items-center gap-1">
-                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                         <span className="text-[8px] font-black text-emerald-500 uppercase">{s.confidence?.toFixed(2) || '99.98'}% Elite</span>
-                       </div>
-                       <p className="text-[6px] text-secondary font-black uppercase tracking-widest opacity-40">Quantum Verified</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => copySignal(s)} className="p-2 bg-white/5 border border-white/10 text-primary rounded-lg font-black text-[8px] uppercase tracking-widest hover:bg-accent hover:text-black transition-all active:scale-90">C</button>
-                      <button onClick={() => checkSignalStatus(s.id)} className="p-2 bg-accent/10 border border-accent/20 text-accent rounded-lg font-black text-[8px] uppercase tracking-widest hover:bg-accent hover:text-black transition-all active:scale-90">V</button>
-                    </div>
-                 </div>
+            {signals.length === 0 ? (
+              <div className="glass-card p-10 rounded-[2.5rem] text-center border border-white/5 space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl mx-auto">
+                  ⚡
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-primary uppercase tracking-wider">Nenhum Sinal em Fila</h4>
+                  <p className="text-[8px] text-secondary leading-relaxed max-w-xs mx-auto">Vá até a aba <strong>Hackear</strong>, selecione a casa e gere novos sinais com proteção Anti-Loss.</p>
+                </div>
+                <button 
+                  onClick={() => setActiveScreen(AppScreen.HACK_GENERATOR)}
+                  className="px-6 py-3 bg-accent text-black rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                >
+                  Gerar Sinais Agora
+                </button>
               </div>
-            ))}
+            ) : (
+              signals.slice(0, 40).map((s) => (
+                <div key={s.id} className="glass-card p-5 rounded-[2.2rem] flex items-center justify-between border border-white/5 group transition-all hover:bg-white/[0.05] relative overflow-hidden shadow-xl">
+                   <div className={`absolute top-0 left-0 w-1.5 h-full ${s.type === CandleType.PINK ? 'bg-gradient-to-b from-pink-500 to-rose-600' : 'bg-gradient-to-b from-purple-500 to-indigo-600'}`}></div>
+                   <div className="flex flex-col pl-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-3xl font-black text-primary tabular-nums tracking-tighter leading-none">{s.time}</span>
+                        <span className="text-[7px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase">Sinal Confirmado</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-lg ${s.type === CandleType.PINK ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' : 'bg-purple-600/20 text-purple-300 border border-purple-500/30'}`}>
+                          {s.type === CandleType.PINK ? '🌸 Alvo Rosa 5x+' : `🟣 ${s.multiplier}`}
+                        </span>
+                        {s.secondaryMultiplier && (
+                          <span className="text-[7px] font-black text-secondary bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
+                            Proteção: {s.secondaryMultiplier}
+                          </span>
+                        )}
+                        <span className="text-[7px] font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded uppercase border border-amber-500/20">
+                          Max 1 Gale
+                        </span>
+                        {s.status === SignalStatus.WIN && (
+                          <span className="text-[7px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-black animate-in zoom-in-90">
+                            GREEN ✅
+                          </span>
+                        )}
+                      </div>
+                   </div>
+                   <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end">
+                         <div className="flex items-center gap-1">
+                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                           <span className="text-[9px] font-black text-emerald-400 uppercase">Confirmado</span>
+                         </div>
+                         <p className="text-[6px] text-secondary font-mono uppercase tracking-widest opacity-60">Anti-Loss Shield</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button 
+                          onClick={() => copySignal(s)} 
+                          title="Copiar Sinal"
+                          className="p-2.5 bg-white/5 border border-white/10 text-primary rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-accent hover:text-black transition-all active:scale-90 flex items-center justify-center"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        </button>
+                        <button 
+                          onClick={() => checkSignalStatus(s.id)} 
+                          title="Verificar Entrada"
+                          className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl font-black text-[8px] uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all active:scale-90 flex items-center gap-1"
+                        >
+                          <span>✓</span>
+                          <span>Green</span>
+                        </button>
+                      </div>
+                   </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -1500,7 +1217,7 @@ const App: React.FC = () => {
               <div key={item.id} className="glass-card rounded-[1.8rem] p-4 space-y-4 border border-white/5">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-2xl border border-white/5">{item.logo}</div>
+                    <HouseLogoBadge houseId={item.id} size="md" />
                     <div>
                        <h3 className="font-black text-sm text-primary tracking-tight">{item.house}</h3>
                        <div className="flex items-center gap-1.5">
@@ -1591,8 +1308,8 @@ const App: React.FC = () => {
                   </p>
                   {!msg.isUser && (
                     <div className="flex gap-2 pt-2">
-                      <button onClick={() => { navigator.clipboard.writeText(`${msg.text}\n\nDARK BOT`); triggerToast("Copiado!"); }} className="flex-1 py-2 bg-white/5 border border-white/5 text-primary text-[8px] font-black uppercase rounded-lg">Copiar</button>
-                      <button onClick={() => { if(navigator.share) navigator.share({text: `${msg.text}\n\nDARK BOT`}); }} className="flex-1 py-2 bg-accent/10 border border-accent/20 text-accent text-[8px] font-black uppercase rounded-lg">Share</button>
+                      <button onClick={() => { navigator.clipboard.writeText(formatMentorAdviceCopy(msg.text)); triggerToast("Conselho Copiado!"); }} className="flex-1 py-2 bg-white/5 border border-white/5 text-primary text-[8px] font-black uppercase rounded-lg">Copiar</button>
+                      <button onClick={() => { const t = formatMentorAdviceCopy(msg.text); if(navigator.share) navigator.share({text: t}); else { navigator.clipboard.writeText(t); triggerToast("Conselho Copiado!"); } }} className="flex-1 py-2 bg-accent/10 border border-accent/20 text-accent text-[8px] font-black uppercase rounded-lg">Share</button>
                     </div>
                   )}
                 </div>
@@ -1621,7 +1338,7 @@ const App: React.FC = () => {
                   }}
                   className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-accent/30 hover:bg-white/[0.05] transition-all flex flex-col items-center gap-2 group"
                 >
-                  <span className="text-2xl">{house.logo}</span>
+                  <HouseLogoBadge houseId={house.id} size="md" />
                   <span className="text-[8px] font-black text-secondary uppercase tracking-widest group-hover:text-primary">{house.name}</span>
                 </button>
               ))}

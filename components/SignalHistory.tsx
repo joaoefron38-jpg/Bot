@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Signal, CandleType, SignalStatus } from '../types.ts';
+import { formatSingleSignalCopy } from '../src/copyTemplates.ts';
 
 interface SignalHistoryProps {
   history: Signal[];
@@ -85,7 +86,7 @@ const CountdownProgress = ({ targetTimestamp, currentTime }: { targetTimestamp: 
 
 export default function SignalHistory({ history, mentorAnalysis, onRemove, onClearAll, onCopy, currentTime }: SignalHistoryProps) {
   const formatText = (sig: Signal) => {
-    return `💎 *DARK BOT - SINAL CONFIRMADO* 💎\n\n🏛️ *CASA:* ${sig.house.toUpperCase()}\n⏰ *HORARIO:* ${sig.time}\n🎯 *ALVO:* ${sig.multiplier}\n🔥 *ASSERTIVIDADE:* ${sig.probability.toFixed(1)}%\n\n✅ *ENTRADA AUTORIZADA*\n🤖 *dark.bot (hack)*`;
+    return formatSingleSignalCopy(sig);
   };
 
   return (
